@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.IO;
 
 using System.Collections.Concurrent;
 
@@ -51,17 +52,17 @@ namespace ImageFinder
             drawBox.AddPallete(brightPurpleColor);
         }
 
-        private bool IsImageExtension(string extension)// 파일 확장자 검사
+        private bool IsImageExtension(string extension)//opencv에서 지원하는 이미지 파일 확장자 검사
         {
             return
-                extension.Equals(".png") ||
-                extension.Equals(".PNG") ||
-                extension.Equals(".jpg") ||
-                extension.Equals(".jpeg") ||
-                extension.Equals(".jpe") ||
-                extension.Equals(".jp2") ||
-                extension.Equals(".webp") ||
-                extension.Equals(".bmp") ||
+                extension.Equals(".png")    ||
+                extension.Equals(".PNG")    ||
+                extension.Equals(".jpg")    ||
+                extension.Equals(".jpeg")   ||
+                extension.Equals(".jpe")    ||
+                extension.Equals(".jp2")    ||
+                extension.Equals(".webp")   ||
+                extension.Equals(".bmp")    ||
                 extension.Equals(".dib");
         }
 
@@ -70,6 +71,11 @@ namespace ImageFinder
             if(folderBrowserDialog.ShowDialog() == DialogResult.OK)
             {
                 dirPath = folderBrowserDialog.SelectedPath;
+                if(!Directory.Exists(dirPath))
+                {
+                    dirPath = "";
+                    MessageBox.Show("존재하지 않는 폴더 입니다");
+                }
             }
         }
 
@@ -79,13 +85,21 @@ namespace ImageFinder
 
             ImageCompareSystem.SetOriginalImage(bitmap);
 
+            if (!Directory.Exists(dirPath))
+            {
+                MessageBox.Show("이미지를 찾을 폴더를 선택해 주세요");
+                return;
+            }
+
             try
             {
-                System.IO.DirectoryInfo di = new System.IO.DirectoryInfo(dirPath);
+                DirectoryInfo di = new DirectoryInfo(dirPath);
 
-                foreach (var item in di.GetFiles())
+                var files = di.GetFiles();
+
+                foreach (var file in files)
                 {
-                    var fileName = item.Name;
+                    var fileName = file.Name;
 
                     if (String.IsNullOrEmpty(fileName))
                         continue;
@@ -94,7 +108,7 @@ namespace ImageFinder
 
                     if (IsImageExtension(extension))
                     {
-                        fileQueue.Enqueue($"{dirPath}/{fileName}");
+                        fileQueue.Enqueue(fileName);
                     }
                 }
             }
@@ -107,8 +121,10 @@ namespace ImageFinder
 
             while (true)
             {
-                if(!fileQueue.TryDequeue(out var path))
+                if(!fileQueue.TryDequeue(out var fileName))
                     break;
+
+                var path = $"{dirPath}\\{fileName}";
 
                 var dstBitmap = (Bitmap)Image.FromFile(path);
                 
@@ -118,8 +134,8 @@ namespace ImageFinder
                 {
                     try
                     {
-                        resultImageList.Images.Add(path, dstBitmap);
-                        resultImageView.Items.Add(path, resultImageList.Images.Count - 1);
+                        resultImageList.Images.Add(fileName, dstBitmap);
+                        resultImageView.Items.Add(fileName, resultImageList.Images.Count - 1);
                     }
                     catch (Exception error)
                     {
