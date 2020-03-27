@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
 
+
 using System.Collections.Concurrent;
 
 namespace ImageFinder
@@ -118,19 +119,18 @@ namespace ImageFinder
                 return;
             }
 
-
             while (true)
             {
-                if(!fileQueue.TryDequeue(out var fileName))
+                if (!fileQueue.TryDequeue(out var fileName))
                     break;
 
                 var path = $"{dirPath}\\{fileName}";
 
                 var dstBitmap = (Bitmap)Image.FromFile(path);
-                
+
                 var simul = ImageCompareSystem.CompareWithBitmap(dstBitmap);
 
-                if(simul > (float)MinSimilarity.Value)
+                if (simul > (float)MinSimilarity.Value)
                 {
                     try
                     {
@@ -148,6 +148,42 @@ namespace ImageFinder
                     dstBitmap.Dispose();
                 }
             }
+        }
+
+        private async Task ExcuteCompare()
+        {
+            await Task.Run(() =>
+            {
+                while (true)
+                {
+                    if (!fileQueue.TryDequeue(out var fileName))
+                        break;
+
+                    var path = $"{dirPath}\\{fileName}";
+
+                    var dstBitmap = (Bitmap)Image.FromFile(path);
+
+                    var simul = ImageCompareSystem.CompareWithBitmap(dstBitmap);
+
+                    if (simul > (float)MinSimilarity.Value)
+                    {
+                        try
+                        {
+                            resultImageList.Images.Add(fileName, dstBitmap);
+                            resultImageView.Items.Add(fileName, resultImageList.Images.Count - 1);
+                        }
+                        catch (Exception error)
+                        {
+                            MessageBox.Show(error.Message, "에러", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            dstBitmap.Dispose();
+                        }
+                    }
+                    else
+                    {
+                        dstBitmap.Dispose();
+                    }
+                }
+            });
         }
     }
 }

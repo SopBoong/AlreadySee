@@ -163,5 +163,30 @@ namespace ImageFinder
 
             return CompareImage(originalImage, dstImage);
         }
+
+        public static async Task<float> CompareWithBitmapAsync(Bitmap image)
+        {
+            if (originalImage == null || originalImageHeight < 0 || originalImageWidth < 0)
+                return -1.0f;
+
+            var dstImage = OpenCvSharp.Extensions.BitmapConverter.ToMat(image);
+
+            ImageRatioCalculation(dstImage.Cols, dstImage.Rows, out var multiple, out var dstImageWidthRatio, out var dstImageHeightRatio);
+
+            int dstWidth = (int)(dstImageWidthRatio * multiple);
+            int dstHeight = (int)(dstImageHeightRatio * multiple);
+
+            try
+            {
+                Cv2.Resize(dstImage, dstImage, new OpenCvSharp.Size(dstWidth, dstHeight));
+                Cv2.CvtColor(dstImage, dstImage, OpenCvSharp.ColorConversionCodes.BGR2HSV);
+            }
+            catch
+            {
+                return 0.0f;
+            }
+
+            return CompareImage(originalImage, dstImage);
+        }
     }
 }
