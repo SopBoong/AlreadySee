@@ -118,7 +118,11 @@ namespace ImageFinder
                 MessageBox.Show(error.Message, "에러", MessageBoxButtons.OK);
                 return;
             }
+            ExcuteCompare();
+        }
 
+        private async void ExcuteCompare()
+        {
             while (true)
             {
                 if (!fileQueue.TryDequeue(out var fileName))
@@ -128,7 +132,7 @@ namespace ImageFinder
 
                 var dstBitmap = (Bitmap)Image.FromFile(path);
 
-                var simul = ImageCompareSystem.CompareWithBitmap(dstBitmap);
+                var simul = await ImageCompareSystem.CompareWithBitmapAsync(dstBitmap);
 
                 if (simul > (float)MinSimilarity.Value)
                 {
@@ -148,42 +152,6 @@ namespace ImageFinder
                     dstBitmap.Dispose();
                 }
             }
-        }
-
-        private async Task ExcuteCompare()
-        {
-            await Task.Run(() =>
-            {
-                while (true)
-                {
-                    if (!fileQueue.TryDequeue(out var fileName))
-                        break;
-
-                    var path = $"{dirPath}\\{fileName}";
-
-                    var dstBitmap = (Bitmap)Image.FromFile(path);
-
-                    var simul = ImageCompareSystem.CompareWithBitmap(dstBitmap);
-
-                    if (simul > (float)MinSimilarity.Value)
-                    {
-                        try
-                        {
-                            resultImageList.Images.Add(fileName, dstBitmap);
-                            resultImageView.Items.Add(fileName, resultImageList.Images.Count - 1);
-                        }
-                        catch (Exception error)
-                        {
-                            MessageBox.Show(error.Message, "에러", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            dstBitmap.Dispose();
-                        }
-                    }
-                    else
-                    {
-                        dstBitmap.Dispose();
-                    }
-                }
-            });
         }
     }
 }
