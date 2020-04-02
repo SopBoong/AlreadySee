@@ -34,7 +34,7 @@
             this.openFolderButton = new System.Windows.Forms.Button();
             this.folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
             this.searchButton = new System.Windows.Forms.Button();
-            this.progressBar1 = new System.Windows.Forms.ProgressBar();
+            this.progressBar = new System.Windows.Forms.ProgressBar();
             this.clearButton = new System.Windows.Forms.Button();
             this.eraserButton = new System.Windows.Forms.Button();
             this.pencilButton = new System.Windows.Forms.Button();
@@ -103,12 +103,12 @@
             this.searchButton.UseVisualStyleBackColor = true;
             this.searchButton.Click += new System.EventHandler(this.searchButton_Click);
             // 
-            // progressBar1
+            // progressBar
             // 
-            this.progressBar1.Location = new System.Drawing.Point(713, 12);
-            this.progressBar1.Name = "progressBar1";
-            this.progressBar1.Size = new System.Drawing.Size(255, 23);
-            this.progressBar1.TabIndex = 5;
+            this.progressBar.Location = new System.Drawing.Point(713, 12);
+            this.progressBar.Name = "progressBar";
+            this.progressBar.Size = new System.Drawing.Size(255, 23);
+            this.progressBar.TabIndex = 5;
             // 
             // clearButton
             // 
@@ -364,7 +364,7 @@
             this.Controls.Add(this.clearButton);
             this.Controls.Add(this.eraserButton);
             this.Controls.Add(this.pencilButton);
-            this.Controls.Add(this.progressBar1);
+            this.Controls.Add(this.progressBar);
             this.Controls.Add(this.searchButton);
             this.Controls.Add(this.paint);
             this.Controls.Add(this.openFolderButton);
@@ -387,7 +387,7 @@
         private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog;
         private System.Windows.Forms.PictureBox paint;
         private System.Windows.Forms.Button searchButton;
-        private System.Windows.Forms.ProgressBar progressBar1;
+        private System.Windows.Forms.ProgressBar progressBar;
         private System.Windows.Forms.Button pencilButton;
         private System.Windows.Forms.Button eraserButton;
         private System.Windows.Forms.Button clearButton;

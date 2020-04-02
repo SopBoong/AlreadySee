@@ -111,6 +111,10 @@ namespace ImageFinder
                     {
                         fileQueue.Enqueue(fileName);
                     }
+
+                    progressBar.Minimum = 0;
+                    progressBar.Maximum = fileQueue.Count;
+                    progressBar.Value = 0;
                 }
             }
             catch (Exception error)
@@ -118,6 +122,7 @@ namespace ImageFinder
                 MessageBox.Show(error.Message, "에러", MessageBoxButtons.OK);
                 return;
             }
+
             ExcuteCompare();
         }
 
@@ -128,11 +133,24 @@ namespace ImageFinder
                 if (!fileQueue.TryDequeue(out var fileName))
                     break;
 
+                progressBar.Value++;
+
                 var path = $"{dirPath}\\{fileName}";
 
-                var dstBitmap = (Bitmap)Image.FromFile(path);
+                Bitmap dstBitmap = null;
+
+                try
+                {
+                    dstBitmap = (Bitmap)Image.FromFile(path);
+                }
+                catch(OutOfMemoryException e)
+                {
+                    continue;
+                }
+
 
                 var simul = await ImageCompareSystem.CompareWithBitmapAsync(dstBitmap);
+                //var simul = ImageCompareSystem.CompareWithBitmap(dstBitmap);
 
                 if (simul > (float)MinSimilarity.Value)
                 {
