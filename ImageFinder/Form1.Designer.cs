@@ -82,6 +82,8 @@
             this.resultImageView.Size = new System.Drawing.Size(599, 537);
             this.resultImageView.TabIndex = 0;
             this.resultImageView.UseCompatibleStateImageBehavior = false;
+            this.resultImageView.DoubleClick += new System.EventHandler(this.resultImageView_DoubleClick);
+            this.resultImageView.MouseClick += new System.Windows.Forms.MouseEventHandler(this.resultImageView_MouseClick);
             // 
             // openFolderButton
             // 
@@ -380,8 +382,6 @@
         }
 
         #endregion
-
-        private System.Windows.Forms.ImageList resultImageList;
         private System.Windows.Forms.ListView resultImageView;
         private System.Windows.Forms.Button openFolderButton;
         private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog;
@@ -414,6 +414,7 @@
         private System.Windows.Forms.Panel brightGrayColor;
         private System.Windows.Forms.Panel blackColor;
         private System.Windows.Forms.Panel brightDeepBlueSkyColor;
+        public System.Windows.Forms.ImageList resultImageList;
     }
 }
 

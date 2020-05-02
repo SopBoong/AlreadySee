@@ -82,18 +82,25 @@ namespace ImageFinder
 
         private void searchButton_Click(object sender, EventArgs e)
         {
-            var bitmap = drawBox.GetBitMap();
-
-            ImageCompareSystem.SetOriginalImage(bitmap);
-
-            if (!Directory.Exists(dirPath))
-            {
-                MessageBox.Show("이미지를 찾을 폴더를 선택해 주세요");
-                return;
-            }
-
             try
             {
+                var bitmap = drawBox.GetBitMap();
+
+                if (!ImageCompareSystem.SetOriginalImage(bitmap))
+                {
+                    MessageBox.Show("알 수 없는 오류 입니다");
+                    return;
+                }
+
+                if (!Directory.Exists(dirPath))
+                {
+                    MessageBox.Show("이미지를 찾을 폴더를 선택해 주세요");
+                    return;
+                }
+
+                resultImageList.Images.Clear();
+                resultImageView.Items.Clear();
+
                 DirectoryInfo di = new DirectoryInfo(dirPath);
 
                 var files = di.GetFiles();
@@ -126,6 +133,27 @@ namespace ImageFinder
             ExcuteCompare();
         }
 
+        private Bitmap TransparentProcessing(Bitmap dstBitmap)
+        {// 검색이 끝난 이미지를 표시하기 위해 알맞은 비율로 조절하고 빈자리는 투명화 시킴 이 작업이 없으면 이미지가 늘어남
+            var targetSize = resultImageList.ImageSize;
+
+            ImageCompareSystem.ImageRatioCalculation(dstBitmap.Width, dstBitmap.Height, targetSize.Width, targetSize.Height, out var multiple, out var widthRatio, out var heightRatio);
+
+            var size = new Size((int)(widthRatio * multiple), (int)(heightRatio * multiple));
+            var resizeBitmap = new Bitmap(dstBitmap, size);
+            var transparentBitmap = new Bitmap(targetSize.Width, targetSize.Height);
+            transparentBitmap.MakeTransparent();
+
+            using (Graphics g = Graphics.FromImage(transparentBitmap))
+            {
+                g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+                g.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
+                g.DrawImage(resizeBitmap, (transparentBitmap.Width - size.Width) * 0.5f, (transparentBitmap.Height - size.Height) * 0.5f, size.Width, size.Height);
+            }
+
+            return transparentBitmap;
+        }
+
         private async void ExcuteCompare()
         {
             while (true)
@@ -135,43 +163,133 @@ namespace ImageFinder
 
                 progressBar.Value++;
 
-                var path = $"{dirPath}\\{fileName}";
-
-                Bitmap dstBitmap = null;
+                var path = $@"{dirPath}\{fileName}";
 
                 try
                 {
-                    dstBitmap = (Bitmap)Image.FromFile(path);
+                    using (var dstBitmap = (Bitmap)Image.FromFile(path))
+                    {
+                        var simul = await ImageCompareSystem.CompareWithBitmapAsync(dstBitmap);
+
+                        if (simul > (float)MinSimilarity.Value)
+                        {
+                            var transparentBitmap = TransparentProcessing(dstBitmap);
+                            dstBitmap.Dispose();
+                            resultImageList.Images.Add(fileName, transparentBitmap);
+                            resultImageView.Items.Add(fileName, resultImageList.Images.Count - 1);
+                        }
+                    }
                 }
-                catch(OutOfMemoryException e)
-                {
+                catch (OutOfMemoryException)
+                {// 갤에서 받은 특이한 이미지 들이 여기서 걸러짐 ex) 솦갤 전통, 깨진 파일, 잘못된 확장자 등
                     continue;
                 }
-
-
-                var simul = await ImageCompareSystem.CompareWithBitmapAsync(dstBitmap);
-                //var simul = ImageCompareSystem.CompareWithBitmap(dstBitmap);
-
-                if (simul > (float)MinSimilarity.Value)
+                catch (Exception error)
                 {
-                    try
+                    MessageBox.Show(error.Message, "에러", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void OpenImageFile(string fileName)
+        {
+            try
+            {
+                System.Diagnostics.Process.Start($@"{dirPath}\{fileName}");
+            }
+            catch
+            {
+                MessageBox.Show("존재하지 않는 폴더 입니다");
+            }
+        }
+
+        private void OpenFolderAndSelectImageFile(string fileName)
+        {
+            try
+            {
+                System.Diagnostics.Process.Start("explorer.exe", string.Format("/select, \"{0}\\{1}\"", dirPath, fileName));
+            }
+            catch
+            {
+                MessageBox.Show("존재하지 않는 폴더 입니다");
+            }
+        }
+
+        private void LoadImageAndSaveAs(string fileName)
+        {
+            try
+            {
+                SaveFileDialog dlg = new SaveFileDialog();
+                dlg.Title = "다른 이름으로 저장";
+                dlg.DefaultExt = "jpg";
+                dlg.Filter = "JPEG (*.jpg)|*.jpg|Bitmap (*.bmp)|*.bmp|PNG (*.png)|*.png";
+                dlg.FilterIndex = 0;
+
+                if (dlg.ShowDialog() == DialogResult.OK)
+                {
+                    using (Bitmap image = new Bitmap($@"{dirPath}\{fileName}"))
                     {
-                        resultImageList.Images.Add(fileName, dstBitmap);
-                        resultImageView.Items.Add(fileName, resultImageList.Images.Count - 1);
-                    }
-                    catch (Exception error)
-                    {
-                        MessageBox.Show(error.Message, "에러", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        dstBitmap.Dispose();
+                        image.Save(dlg.FileName);
                     }
                 }
-                else
+            }
+            catch
+            {
+                MessageBox.Show("존재하지 않는 폴더 입니다");
+            }
+        }
+
+        private void resultImageView_DoubleClick(object sender, EventArgs e)
+        {
+            ListView listView = sender as ListView;
+            var chosenImage = listView.FocusedItem;
+
+            OpenImageFile(chosenImage.Text);
+        }
+
+        private void resultImageView_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right)
+            {
+                ContextMenu menu = new ContextMenu();
+                MenuItem item1 = new MenuItem();
+                MenuItem item2 = new MenuItem();
+                MenuItem item3 = new MenuItem();
+
+                menu.MenuItems.Add(item1);
+                menu.MenuItems.Add(item2);
+                menu.MenuItems.Add(item3);
+                
+                item1.Text = "이미지 파일 열기";
+                item2.Text = "파일 위치 열기";
+                item3.Text = "다른 이름으로 저장";
+
+                item1.Click += (s, ea) => 
                 {
-                    dstBitmap.Dispose();
-                }
+                    ListView listView = sender as ListView;
+                    var chosenImage = listView.FocusedItem;
+
+                    OpenImageFile(chosenImage.Text);
+                };
+
+                item2.Click += (s, ea) =>
+                {
+                    ListView listView = sender as ListView;
+                    var chosenImage = listView.FocusedItem;
+
+                    OpenFolderAndSelectImageFile(chosenImage.Text);
+                };
+
+                item3.Click += (s, es) =>
+                {
+                    ListView listView = sender as ListView;
+                    var chosenImage = listView.FocusedItem;
+
+                    LoadImageAndSaveAs(chosenImage.Text);
+                };
+
+                menu.Show(resultImageView, new Point(e.X, e.Y));
             }
         }
     }
 }
-
-

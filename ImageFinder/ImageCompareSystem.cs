@@ -14,59 +14,49 @@ namespace ImageFinder
     static class ImageCompareSystem
     {
         static Mat originalImage = null;
+        static Bitmap originalBitmap = null;
 
         static int originalImageWidth = -1;
         static int originalImageHeight = -1;
 
-        public static void SetOriginalImage(Bitmap bitmap)
+        public static bool SetOriginalImage(Bitmap bitmap)
         {
             if (bitmap == null)
-                return;
+                return false;
 
-            originalImage = OpenCvSharp.Extensions.BitmapConverter.ToMat(bitmap);
-            originalImageWidth = originalImage.Width;
-            originalImageHeight = originalImage.Height;
+            try
+            {
+                originalBitmap = bitmap;
+                originalImage = OpenCvSharp.Extensions.BitmapConverter.ToMat(originalBitmap);
 
-            Cv2.CvtColor(originalImage, originalImage, OpenCvSharp.ColorConversionCodes.BGR2HSV);
+                originalImageWidth = originalImage.Width;
+                originalImageHeight = originalImage.Height;
 
-           // MatTransparent(bitmap, ref originalImage);
+                Cv2.CvtColor(originalImage, originalImage, OpenCvSharp.ColorConversionCodes.BGR2HSV);
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
-        //private unsafe static void MatTransparent(Bitmap bitmap, ref Mat mat)
-        //{
-        //    for (int y = 0; y < bitmap.Height; y++)
-        //    {
-        //        for (int x = 0; x < bitmap.Width; x++)
-        //        {
-        //            var color = bitmap.GetPixel(x, y);
-
-        //            if (color.A != 0)
-        //                continue;
-
-        //            int matIdx = y * (int)mat.Step() + x * mat.ElemSize();
-
-        //            var data = mat.DataPointer;
-
-
-        //        }
-        //    }
-        //}
-
-        private static void ImageRatioCalculation(int imageWith, int imageHeight, out float multiple, out float imageWidthRatio, out float imageHeightRatio)
+        public static void ImageRatioCalculation(int imageWith, int imageHeight, int targetWidth, int targetHeight, out float multiple, out float imageWidthRatio, out float imageHeightRatio)
         {
             if (imageWith >= imageHeight)
             {// 이미지의 가로가 세로보다 길거나 같을 때에는 가로 픽셀을 1로 잡고 계산
                 imageWidthRatio = 1.0f;
                 imageHeightRatio = (float)imageHeight / (float)imageWith;// 1 : 0.xxx
 
-                multiple = originalImageWidth;
+                multiple = targetWidth;
             }
             else
             {// 이미지의 세로가 가로보다 길 때에는 세로 픽셀을 1로 잡고 계산
                 imageWidthRatio = (float)imageWith / (float)imageHeight;// 0.xxx : 1
                 imageHeightRatio = 1.0f;
 
-                multiple = originalImageHeight;
+                multiple = targetHeight;
             }
         }
 
@@ -106,15 +96,17 @@ namespace ImageFinder
             int dstIdx = 0;
             int srcIdx = 0;
 
-            int xSpace = (int)((srcWidth - dstWidth) * 0.5f);
-            int ySpace = (int)((srcHeight - dstHeight) * 0.5f);
+            int xSpace = (int)((srcWidth - dstWidth) * 0.5f);// x 축 여백
+            int ySpace = (int)((srcHeight - dstHeight) * 0.5f);// y 축 여백 srcImage의 중점을 기준으로 축소 시키기 때문에 * 0.5f
 
             for (int y = 0; y < dstHeight; y++)
             {
                 for (int x = 0; x < dstWidth; x++)
                 {
-                    srcIdx = (y + ySpace) * (int)srcImage.Step() + (x + xSpace) * srcImage.ElemSize();
-                    dstIdx = y * (int)dstImage.Step() + x * dstImage.ElemSize();
+                    srcIdx = (y + ySpace) * srcWidth * srcImage.ElemSize() + (x + xSpace) * srcImage.ElemSize();
+                    dstIdx = y * dstWidth * dstImage.ElemSize() + x * dstImage.ElemSize();
+
+                    int srcA = originalBitmap.GetPixel(x + xSpace, y + ySpace).A;// HSV에서는 알파값을 표현할 수 없어서 Bitmap이미지로 부터 알파값을 가져옴
 
                     int srcH = srcData[srcIdx];
                     int srcS = srcData[srcIdx + 1];
@@ -124,11 +116,13 @@ namespace ImageFinder
                     int dstS = dstData[dstIdx + 1];
                     int dstV = dstData[dstIdx + 2];
 
-                    if (srcH != 0 && srcS != 0 && srcV != 0)
-                    {
+                    if (0 != srcA)
+                    {// 알파값이 0이 아니면 브러쉬로 그린 부분임
                         maxCount++;
 
-                        if (CompareHSV(srcH, srcS, srcV, dstH, dstS, dstV) < 150.1f)
+                        float value = CompareHSV(srcH, srcS, srcV, dstH, dstS, dstV);
+
+                        if (value < 50)
                         {
                             count++;
                         }
@@ -144,24 +138,25 @@ namespace ImageFinder
             if (originalImage == null || originalImageHeight < 0 || originalImageWidth < 0)
                 return -1.0f;
 
-            var dstImage = OpenCvSharp.Extensions.BitmapConverter.ToMat(image);
-
-            ImageRatioCalculation(dstImage.Cols, dstImage.Rows, out var multiple, out var dstImageWidthRatio, out var dstImageHeightRatio);
-
-            int dstWidth = (int)(dstImageWidthRatio * multiple);
-            int dstHeight = (int)(dstImageHeightRatio * multiple);
-
             try
             {
-                Cv2.Resize(dstImage, dstImage, new OpenCvSharp.Size(dstWidth, dstHeight));
-                Cv2.CvtColor(dstImage, dstImage, OpenCvSharp.ColorConversionCodes.BGR2HSV);
+                using (var dstImage = OpenCvSharp.Extensions.BitmapConverter.ToMat(image))
+                {
+                    ImageRatioCalculation(dstImage.Cols, dstImage.Rows, originalImageWidth, originalImageHeight, out var multiple, out var dstImageWidthRatio, out var dstImageHeightRatio);
+
+                    int dstWidth = (int)(dstImageWidthRatio * multiple);
+                    int dstHeight = (int)(dstImageHeightRatio * multiple);
+
+                    Cv2.Resize(dstImage, dstImage, new OpenCvSharp.Size(dstWidth, dstHeight));
+                    Cv2.CvtColor(dstImage, dstImage, OpenCvSharp.ColorConversionCodes.BGR2HSV);
+
+                    return CompareImage(originalImage, dstImage);
+                }
             }
             catch
             {
                 return 0.0f;
             }
-
-            return CompareImage(originalImage, dstImage);
         }
 
         public static Task<float> CompareWithBitmapAsync(Bitmap image)

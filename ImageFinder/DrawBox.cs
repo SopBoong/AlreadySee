@@ -138,22 +138,25 @@ namespace ImageFinder
             if (palletePanel == null)
                 return;
 
-            palletePanel.Click += PaletteClick;
+            palletePanel.MouseClick += PaletteClick;
         }
 
-        private void PaletteClick(object sender, EventArgs e)// 팔레트를 누르면 그리는 색을 변경
+        private void PaletteClick(object sender, MouseEventArgs e)// 팔레트를 누르면 그리는 색을 변경
         {
             if (drawMode != DrawMode.Pencil)
                 return;
 
-            var colorPanel = (Panel)sender;
-            nowColor = colorPanel.BackColor;
-            pen.Color = nowColor;
+            if (e.Button == MouseButtons.Left)
+            {
+                var colorPanel = (Panel)sender;
+                nowColor = colorPanel.BackColor;
+                pen.Color = nowColor;
 
-            if (nowColorViewPanel == null)
-                return;
+                if (nowColorViewPanel == null)
+                    return;
 
-            nowColorViewPanel.BackColor = nowColor;
+                nowColorViewPanel.BackColor = nowColor;
+            }
         }
 
         private void DrawPenWidthPreview(int x, int y)
