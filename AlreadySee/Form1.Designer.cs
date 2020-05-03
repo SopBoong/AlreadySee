@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.resultImageList = new System.Windows.Forms.ImageList(this.components);
             this.resultImageView = new System.Windows.Forms.ListView();
             this.openFolderButton = new System.Windows.Forms.Button();
@@ -76,6 +77,7 @@
             this.customPallete9 = new System.Windows.Forms.Panel();
             this.customPallete10 = new System.Windows.Forms.Panel();
             this.colorDialog = new System.Windows.Forms.ColorDialog();
+            this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
             ((System.ComponentModel.ISupportInitialize)(this.paint)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.ImageSimilarity)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.ColorSimilarity)).BeginInit();
@@ -90,7 +92,6 @@
             // resultImageView
             // 
             this.resultImageView.BackColor = System.Drawing.SystemColors.ScrollBar;
-            this.resultImageView.HideSelection = false;
             this.resultImageView.LargeImageList = this.resultImageList;
             this.resultImageView.Location = new System.Drawing.Point(6, 6);
             this.resultImageView.MultiSelect = false;
@@ -304,7 +305,17 @@
             // ImageSimilarity
             // 
             this.ImageSimilarity.DecimalPlaces = 2;
+            this.ImageSimilarity.Increment = new decimal(new int[] {
+            5,
+            0,
+            0,
+            131072});
             this.ImageSimilarity.Location = new System.Drawing.Point(619, 64);
+            this.ImageSimilarity.Maximum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
             this.ImageSimilarity.Name = "ImageSimilarity";
             this.ImageSimilarity.Size = new System.Drawing.Size(60, 21);
             this.ImageSimilarity.TabIndex = 1;
@@ -353,6 +364,11 @@
             // ColorSimilarity
             // 
             this.ColorSimilarity.DecimalPlaces = 2;
+            this.ColorSimilarity.Increment = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
             this.ColorSimilarity.Location = new System.Drawing.Point(803, 64);
             this.ColorSimilarity.Maximum = new decimal(new int[] {
             360,
@@ -464,6 +480,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
             this.ClientSize = new System.Drawing.Size(976, 605);
             this.Controls.Add(this.customPallete10);
@@ -510,6 +527,7 @@
             this.Controls.Add(this.paint);
             this.Controls.Add(this.openFolderButton);
             this.Controls.Add(this.resultImageView);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.Name = "MainForm";
             this.Text = "이미본거야";
@@ -569,6 +587,7 @@
         private System.Windows.Forms.Panel customPallete9;
         private System.Windows.Forms.Panel customPallete10;
         private System.Windows.Forms.ColorDialog colorDialog;
+        private System.Windows.Forms.SaveFileDialog saveFileDialog;
     }
 }
 

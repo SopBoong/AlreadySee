@@ -8,7 +8,7 @@
     <ProjectGuid>{A789E7C5-2FDF-4D8B-8115-20E5DAD01028}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <RootNamespace>AlreadySee</RootNamespace>
-    <AssemblyName>AlreadySee</AssemblyName>
+    <AssemblyName>이미본거야</AssemblyName>
     <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -22,7 +22,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -35,6 +35,16 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>Resources\AlreadySee.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup />
+  <PropertyGroup />
+  <PropertyGroup />
+  <PropertyGroup>
+    <StartupObject />
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="OpenCvSharp, Version=1.0.0.0, Culture=neutral, PublicKeyToken=6adad1e807fea099, processorArchitecture=MSIL">
@@ -105,31 +115,16 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\eraser.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\pencil.png" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Resources\eraser20.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\pencil20.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\pencil201.png" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\pencilRe.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\clear.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\clearRe.png" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Resources\clearReRe.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Resources\AlreadySee.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

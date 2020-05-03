@@ -18,13 +18,13 @@ namespace AlreadySee
         DrawBox drawBox = null;
         static string dirPath = "";
         bool isSearching = false;
+        //bool autoScrolling = true;
 
         ConcurrentQueue<string> fileQueue = new ConcurrentQueue<string>();// 혹시 몰라서 ConcurrentQueue 사용
 
         public MainForm()
         {
             InitializeComponent();
-
             Closed += MainForm_Closed;
 
             var prop = resultImageView.GetType().GetProperty("DoubleBuffered", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -320,8 +320,12 @@ namespace AlreadySee
                             dstBitmap.Dispose();
                             resultImageList.Images.Add(fileName, transparentBitmap);
                             resultImageView.Items.Add(fileName, resultImageList.Images.Count - 1);
-                            if (null != resultImageView.FocusedItem)
-                                resultImageView.FocusedItem.Focused = false;
+                            if (resultImageView.SelectedItems.Count == 0 && resultImageView.FocusedItem != null)
+                            {
+                                resultImageView.FocusedItem.Focused = false;// focus 취소가 안되서 강제로 취소시킴
+                            }
+                            //if (autoScrolling)
+                            //    resultImageView.Items[resultImageView.Items.Count - 1].EnsureVisible();
                         }
                     }
                 }
@@ -365,17 +369,16 @@ namespace AlreadySee
         {
             try
             {
-                SaveFileDialog dlg = new SaveFileDialog();
-                dlg.Title = "다른 이름으로 저장";
-                dlg.DefaultExt = "jpg";
-                dlg.Filter = "JPEG (*.jpg)|*.jpg|Bitmap (*.bmp)|*.bmp|PNG (*.png)|*.png";
-                dlg.FilterIndex = 0;
+                saveFileDialog.Title = "다른 이름으로 저장";
+                saveFileDialog.DefaultExt = "jpg";
+                saveFileDialog.Filter = "JPEG (*.jpg)|*.jpg|Bitmap (*.bmp)|*.bmp|PNG (*.png)|*.png";
+                saveFileDialog.FilterIndex = 0;
 
-                if (dlg.ShowDialog() == DialogResult.OK)
+                if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
                     using (Bitmap image = new Bitmap($@"{dirPath}\{fileName}"))
                     {
-                        image.Save(dlg.FileName);
+                        image.Save(saveFileDialog.FileName);
                     }
                 }
             }
@@ -389,8 +392,8 @@ namespace AlreadySee
         {
             ListView listView = sender as ListView;
             var chosenImage = listView.FocusedItem;
-
-            OpenImageFile(chosenImage.Text);
+            if (chosenImage != null)
+                OpenImageFile(chosenImage.Text);
         }
 
         private void resultImageView_MouseClick(object sender, MouseEventArgs e)
