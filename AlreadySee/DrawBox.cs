@@ -6,7 +6,7 @@ using System.Windows.Forms;
 using System.Drawing;
 
 
-namespace ImageFinder
+namespace AlreadySee
 {
     class DrawInformation
     {
@@ -26,6 +26,44 @@ namespace ImageFinder
 
     class DrawBox
     {
+        bool enabled = true;
+        public bool Enabled
+        {
+            get
+            {
+                return enabled;
+            }
+            set
+            {
+                if (value)
+                {
+                    if (drawMode == DrawMode.Eraser)
+                    {
+                        PalleteOff();
+                        changeToPencilButton.Enabled = true;
+                        changeToEraserButton.Enabled = false;
+                    }
+                    else
+                    {
+                        PalleteOn();
+                        changeToPencilButton.Enabled = false;
+                        changeToEraserButton.Enabled = true;
+                    }
+                    clearButton.Enabled = true;
+                    pictureBox.Enabled = true;
+                }
+                else
+                {
+                    PalleteOff();
+                    changeToPencilButton.Enabled = false;
+                    changeToEraserButton.Enabled = false;
+                    clearButton.Enabled = false;
+                    pictureBox.Enabled = false;
+                }
+
+                enabled = value;
+            }
+        }
         enum DrawMode { Pencil, Eraser };
 
         DrawMode drawMode = DrawMode.Pencil;
@@ -38,6 +76,7 @@ namespace ImageFinder
 
         Color nowColor = Color.Black;
         float penWidth = 20.0f;
+        public float PenWidth { get { return penWidth; } set { penWidth = value; pen.Width = penWidth; } }
 
         Point lastMousePoint = new Point();
 
@@ -47,6 +86,7 @@ namespace ImageFinder
         Panel nowColorViewPanel = null;// 현재 선택된 색을 보여주는 패널
 
         DrawInformation nowDrawInformation = new DrawInformation();
+        ColorDialog colorDialog;
 
         PictureBox pictureBox = null;
         Bitmap drawImage = null;
@@ -56,12 +96,15 @@ namespace ImageFinder
         Button changeToEraserButton = null;
         Button clearButton = null;
 
-        public DrawBox(PictureBox pictureBox, Button changeToPencilButton, Button changeToEraserButton, Button clearButton)
+        List<Panel> palleteList = new List<Panel>();
+
+        public DrawBox(PictureBox pictureBox, Button changeToPencilButton, Button changeToEraserButton, Button clearButton, ColorDialog colorDialog)
         {
-            if (pictureBox == null || changeToPencilButton == null || changeToEraserButton == null || clearButton == null)
+            if (pictureBox == null || changeToPencilButton == null || changeToEraserButton == null || clearButton == null || colorDialog == null)
                 return;
 
             this.pictureBox = pictureBox;
+            this.colorDialog = colorDialog;
             drawImage = new Bitmap(pictureBox.Width, pictureBox.Height);
             penWidthPreviewImage = new Bitmap(pictureBox.Width, pictureBox.Height);
 
@@ -86,6 +129,22 @@ namespace ImageFinder
             this.clearButton.Click += ClearButtonClick;
         }
 
+        public void SetNowColor(Color color)
+        {
+            nowColor = color;
+            pen.Color = nowColor;
+
+            if (nowColorViewPanel == null)
+                return;
+
+            nowColorViewPanel.BackColor = nowColor;
+        }
+
+        public Color GetNowColor()
+        {
+            return nowColor;
+        }
+
         private void PencilOrEraserChangeButtonClick(object sender, EventArgs e)
         {
             ChangeDrawMode();
@@ -102,11 +161,13 @@ namespace ImageFinder
             {// 연필에서 지우개로 변경
                 pen.Color = SystemColors.ControlDark;// 진짜 지우지 않고 배경 색으로 덮어씌움
                 drawMode = DrawMode.Eraser;
+                PalleteOff();// 지우개 모드 에서는 팔레트를 선택할 수 없게 변경
             }
             else
             {// 지우개에서 연필로 변경
                 pen.Color = nowColor;
                 drawMode = DrawMode.Pencil;
+                PalleteOn();
             }
 
             changeToPencilButton.Enabled = !changeToPencilButton.Enabled;
@@ -138,24 +199,49 @@ namespace ImageFinder
             if (palletePanel == null)
                 return;
 
+            palleteList.Add(palletePanel);
+
             palletePanel.MouseClick += PaletteClick;
+        }
+
+        public void AddCustomPallete(Panel palletePanel)
+        {
+            AddPallete(palletePanel);
+
+            palletePanel.MouseDoubleClick += PaletteDoubleClick; 
+        }
+
+        public void PalleteOn()
+        {
+            palleteList.ForEach(p => p.Enabled = true);
+            nowColorViewPanel.Enabled = true;
+        }
+
+        public void PalleteOff()
+        {
+            palleteList.ForEach(p => p.Enabled = false);
+            nowColorViewPanel.Enabled = false;
         }
 
         private void PaletteClick(object sender, MouseEventArgs e)// 팔레트를 누르면 그리는 색을 변경
         {
-            if (drawMode != DrawMode.Pencil)
-                return;
-
             if (e.Button == MouseButtons.Left)
             {
                 var colorPanel = (Panel)sender;
-                nowColor = colorPanel.BackColor;
-                pen.Color = nowColor;
+                SetNowColor(colorPanel.BackColor);
+            }
+        }
 
-                if (nowColorViewPanel == null)
-                    return;
-
-                nowColorViewPanel.BackColor = nowColor;
+        private void PaletteDoubleClick(object sender, MouseEventArgs e)// 팔레트를 누르면 그리는 색을 변경
+        {
+            Panel panel = sender as Panel;
+            if (e.Button == MouseButtons.Left)
+            {
+                if (colorDialog.ShowDialog() == DialogResult.OK)
+                {
+                    panel.BackColor = colorDialog.Color;
+                    SetNowColor(panel.BackColor);
+                }
             }
         }
 

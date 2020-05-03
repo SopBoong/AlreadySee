@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Drawing;
 
-namespace ImageFinder
+namespace AlreadySee
 {
     static class Program
     {

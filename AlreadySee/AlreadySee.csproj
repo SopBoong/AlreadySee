@@ -7,8 +7,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{A789E7C5-2FDF-4D8B-8115-20E5DAD01028}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>ImageFinder</RootNamespace>
-    <AssemblyName>ImageFinder</AssemblyName>
+    <RootNamespace>AlreadySee</RootNamespace>
+    <AssemblyName>AlreadySee</AssemblyName>
     <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -76,6 +76,7 @@
     <Compile Include="ImageCompareSystem.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RegistryManager.cs" />
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>

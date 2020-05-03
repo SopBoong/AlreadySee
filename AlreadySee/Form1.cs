@@ -8,25 +8,29 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
-
-
 using System.Collections.Concurrent;
+using System.Reflection;
 
-namespace ImageFinder
+namespace AlreadySee
 {
-
     public partial class MainForm : Form
     {
         DrawBox drawBox = null;
         static string dirPath = "";
+        bool isSearching = false;
 
-        ConcurrentQueue<string> fileQueue = new ConcurrentQueue<string>();
+        ConcurrentQueue<string> fileQueue = new ConcurrentQueue<string>();// 혹시 몰라서 ConcurrentQueue 사용
 
         public MainForm()
         {
             InitializeComponent();
 
-            drawBox = new DrawBox(paint, pencilButton, eraserButton, clearButton);
+            Closed += MainForm_Closed;
+
+            var prop = resultImageView.GetType().GetProperty("DoubleBuffered", BindingFlags.Instance | BindingFlags.NonPublic);
+            prop.SetValue(resultImageView, true, null);// 상속하기 귀찮아서 강제로 protected값 변경
+
+            drawBox = new DrawBox(paint, pencilButton, eraserButton, clearButton, colorDialog);
 
             drawBox.SetNowColorViewPanel(nowColor);
 
@@ -51,6 +55,84 @@ namespace ImageFinder
             drawBox.AddPallete(brightDeepBlueSkyColor);
             drawBox.AddPallete(brightBlueColor);
             drawBox.AddPallete(brightPurpleColor);
+
+            drawBox.AddCustomPallete(customPallete1);
+            drawBox.AddCustomPallete(customPallete2);
+            drawBox.AddCustomPallete(customPallete3);
+            drawBox.AddCustomPallete(customPallete4);
+            drawBox.AddCustomPallete(customPallete5);
+            drawBox.AddCustomPallete(customPallete6);
+            drawBox.AddCustomPallete(customPallete7);
+            drawBox.AddCustomPallete(customPallete8);
+            drawBox.AddCustomPallete(customPallete9);
+            drawBox.AddCustomPallete(customPallete10);
+
+            RegistryManager.LoadRegistry();
+            LoadUI();
+        }
+
+        private void MainForm_Closed(object sender, EventArgs e)
+        {
+            SaveUI();
+        }
+
+        private void LoadUI()
+        {
+            try
+            {
+                if (Directory.Exists(RegistryManager.FilePath))
+                {
+                    SetDirPath(RegistryManager.FilePath);
+                    folderBrowserDialog.SelectedPath = RegistryManager.FilePath;
+                }
+                folderBrowserDialog.SelectedPath = dirPath;
+                ImageSimilarity.Value = (decimal)RegistryManager.ImageSimilarity;
+                ColorSimilarity.Value = (decimal)RegistryManager.ColorSimilarity;
+                drawBox.SetNowColor(RegistryManager.NowColor);
+                var colorList = RegistryManager.CustomPalleteColorList;
+
+                customPallete1.BackColor = colorList[0];
+                customPallete2.BackColor = colorList[1];
+                customPallete3.BackColor = colorList[2];
+                customPallete4.BackColor = colorList[3];
+                customPallete5.BackColor = colorList[4];
+                customPallete6.BackColor = colorList[5];
+                customPallete7.BackColor = colorList[6];
+                customPallete8.BackColor = colorList[7];
+                customPallete9.BackColor = colorList[8];
+                customPallete10.BackColor = colorList[9];
+
+                drawBox.PenWidth = RegistryManager.PenWidth;
+            }
+            catch
+            {
+
+            }
+        }
+
+        private void SaveUI()
+        {
+            RegistryManager.SaveRegistry
+            (
+                new List<Color>
+                {
+                    customPallete1.BackColor,
+                    customPallete2.BackColor,
+                    customPallete3.BackColor,
+                    customPallete4.BackColor,
+                    customPallete5.BackColor,
+                    customPallete6.BackColor,
+                    customPallete7.BackColor,
+                    customPallete8.BackColor,
+                    customPallete9.BackColor,
+                    customPallete10.BackColor
+                },
+                drawBox.GetNowColor(),
+                (float)ImageSimilarity.Value,
+                (float)ColorSimilarity.Value,
+                dirPath,
+                drawBox.PenWidth
+            );
         }
 
         private bool IsImageExtension(string extension)//opencv에서 지원하는 이미지 파일 확장자 검사
@@ -67,61 +149,122 @@ namespace ImageFinder
                 extension.Equals(".dib");
         }
 
+        private void SetDirPath(string path)
+        {
+            dirPath = path;
+            filePathBox.Text = dirPath;
+        }
+
         private void openFolderButton_Click(object sender, EventArgs e)
         {
             if(folderBrowserDialog.ShowDialog() == DialogResult.OK)
             {
-                dirPath = folderBrowserDialog.SelectedPath;
-                if(!Directory.Exists(dirPath))
+                if(!Directory.Exists(folderBrowserDialog.SelectedPath))
                 {
                     dirPath = "";
                     MessageBox.Show("존재하지 않는 폴더 입니다");
                 }
+                SetDirPath(folderBrowserDialog.SelectedPath);
             }
+        }
+
+        private void UIstart()
+        {
+            drawBox.Enabled = false;
+            openFolderButton.Enabled = false;
+            ImageSimilarity.Enabled = false;
+            ColorSimilarity.Enabled = false;
+            label1.Enabled = false;
+            label2.Enabled = false;
+            isSearching = true;
+            searchButton.Text = "검색 중지";
+            filePathBox.Enabled = false;
+        }
+
+        private void UIend()
+        {
+            drawBox.Enabled = true;
+            openFolderButton.Enabled = true;
+            ImageSimilarity.Enabled = true;
+            ColorSimilarity.Enabled = true;
+            label1.Enabled = true;
+            label2.Enabled = true;
+            isSearching = false;
+            searchButton.Text = "검색 시작";
+            progressBar.Value = 0;
+            progressBar.Minimum = 0;
+            progressBar.Maximum = 0;
+            filePathBox.Enabled = true;
+        }
+
+        private void ClearResult()
+        {
+            resultImageList.Images.Clear();
+            resultImageView.Items.Clear();
+        }
+
+        private void SearchStart()
+        {
+            var bitmap = drawBox.GetBitMap();
+
+            if (!ImageCompareSystem.SetOriginalImage(bitmap))
+            {
+                MessageBox.Show("알 수 없는 오류 입니다");
+                return;
+            }
+
+            if (!Directory.Exists(dirPath))
+            {
+                MessageBox.Show("이미지를 찾을 폴더를 선택해 주세요");
+                return;
+            }
+
+            ClearResult();
+
+            DirectoryInfo di = new DirectoryInfo(dirPath);
+
+            var files = di.GetFiles();
+
+            while (fileQueue.TryDequeue(out var v)) { }
+
+            foreach (var file in files)
+            {
+                var fileName = file.Name;
+
+                if (String.IsNullOrEmpty(fileName))
+                    continue;
+
+                var extension = Path.GetExtension(fileName);
+
+                if (IsImageExtension(extension))
+                {
+                    fileQueue.Enqueue(fileName);
+                }
+
+                progressBar.Minimum = 0;
+                progressBar.Maximum = fileQueue.Count;
+                progressBar.Value = 0;
+            }
+            UIstart();
+            ExcuteCompare();
+        }
+
+        private void SearchEnd()
+        {
+            UIend();
         }
 
         private void searchButton_Click(object sender, EventArgs e)
         {
             try
             {
-                var bitmap = drawBox.GetBitMap();
-
-                if (!ImageCompareSystem.SetOriginalImage(bitmap))
+                if (isSearching)
                 {
-                    MessageBox.Show("알 수 없는 오류 입니다");
-                    return;
+                    SearchEnd();
                 }
-
-                if (!Directory.Exists(dirPath))
+                else
                 {
-                    MessageBox.Show("이미지를 찾을 폴더를 선택해 주세요");
-                    return;
-                }
-
-                resultImageList.Images.Clear();
-                resultImageView.Items.Clear();
-
-                DirectoryInfo di = new DirectoryInfo(dirPath);
-
-                var files = di.GetFiles();
-
-                foreach (var file in files)
-                {
-                    var fileName = file.Name;
-
-                    if (String.IsNullOrEmpty(fileName))
-                        continue;
-
-                    var extension = System.IO.Path.GetExtension(fileName);
-
-                    if (IsImageExtension(extension))
-                    {
-                        fileQueue.Enqueue(fileName);
-                    }
-
-                    progressBar.Minimum = 0;
-                    progressBar.Maximum = fileQueue.Count;
-                    progressBar.Value = 0;
+                    SearchStart();
                 }
             }
             catch (Exception error)
@@ -129,8 +272,6 @@ namespace ImageFinder
                 MessageBox.Show(error.Message, "에러", MessageBoxButtons.OK);
                 return;
             }
-
-            ExcuteCompare();
         }
 
         private Bitmap TransparentProcessing(Bitmap dstBitmap)
@@ -156,9 +297,11 @@ namespace ImageFinder
 
         private async void ExcuteCompare()
         {
+            ImageCompareSystem.colorSimilarity = (float)ColorSimilarity.Value;
+            float minsim = (float)ImageSimilarity.Value;
             while (true)
             {
-                if (!fileQueue.TryDequeue(out var fileName))
+                if (!fileQueue.TryDequeue(out var fileName) || isSearching == false)
                     break;
 
                 progressBar.Value++;
@@ -171,17 +314,19 @@ namespace ImageFinder
                     {
                         var simul = await ImageCompareSystem.CompareWithBitmapAsync(dstBitmap);
 
-                        if (simul > (float)MinSimilarity.Value)
+                        if (simul > minsim)
                         {
                             var transparentBitmap = TransparentProcessing(dstBitmap);
                             dstBitmap.Dispose();
                             resultImageList.Images.Add(fileName, transparentBitmap);
                             resultImageView.Items.Add(fileName, resultImageList.Images.Count - 1);
+                            if (null != resultImageView.FocusedItem)
+                                resultImageView.FocusedItem.Focused = false;
                         }
                     }
                 }
                 catch (OutOfMemoryException)
-                {// 갤에서 받은 특이한 이미지 들이 여기서 걸러짐 ex) 솦갤 전통, 깨진 파일, 잘못된 확장자 등
+                {// 갤에서 받은 특이한 이미지들이 여기서 걸러짐 ex) 솦갤 전통, 깨진 파일, 잘못된 확장자 등
                     continue;
                 }
                 catch (Exception error)
@@ -189,6 +334,7 @@ namespace ImageFinder
                     MessageBox.Show(error.Message, "에러", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
+            UIend();
         }
 
         private void OpenImageFile(string fileName)

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.779
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageFinder", "ImageFinder.csproj", "{A789E7C5-2FDF-4D8B-8115-20E5DAD01028}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlreadySee", "AlreadySee.csproj", "{A789E7C5-2FDF-4D8B-8115-20E5DAD01028}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

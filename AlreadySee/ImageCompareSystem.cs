@@ -3,14 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
 using System.Numerics;
-
 using System.Drawing;
 using OpenCvSharp;
 
-namespace ImageFinder
+namespace AlreadySee
 {
+    /// <summary>
+    /// 이미지 검색기의 핵심이 되는 클래스
+    /// </summary>
     static class ImageCompareSystem
     {
         static Mat originalImage = null;
@@ -18,6 +19,7 @@ namespace ImageFinder
 
         static int originalImageWidth = -1;
         static int originalImageHeight = -1;
+        public static float colorSimilarity = 0.0f;
 
         public static bool SetOriginalImage(Bitmap bitmap)
         {
@@ -26,13 +28,16 @@ namespace ImageFinder
 
             try
             {
-                originalBitmap = bitmap;
+                if (originalBitmap != null)
+                    originalBitmap.Dispose();
+
+                originalBitmap = new Bitmap(bitmap);
                 originalImage = OpenCvSharp.Extensions.BitmapConverter.ToMat(originalBitmap);
 
                 originalImageWidth = originalImage.Width;
                 originalImageHeight = originalImage.Height;
 
-                Cv2.CvtColor(originalImage, originalImage, OpenCvSharp.ColorConversionCodes.BGR2HSV);
+                Cv2.CvtColor(originalImage, originalImage, ColorConversionCodes.BGR2HSV);
 
                 return true;
             }
@@ -42,6 +47,16 @@ namespace ImageFinder
             }
         }
 
+        /// <summary>
+        /// 이미지의 비율을 계산하고 적절한 크기를 리턴
+        /// </summary>
+        /// <param name="imageWith">계산할 이미지의 가로 크기</param>
+        /// <param name="imageHeight">계산할 이미지의 세로 크기</param>
+        /// <param name="targetWidth">원하는 적절한 가로 크기</param>
+        /// <param name="targetHeight">원하는 적절한 세로 크기</param>
+        /// <param name="multiple">계산 후 비율에 곱할 값</param>
+        /// <param name="imageWidthRatio">계산이 끝난 가로 비율</param>
+        /// <param name="imageHeightRatio">계산이 끝난 세로 비율</param>
         public static void ImageRatioCalculation(int imageWith, int imageHeight, int targetWidth, int targetHeight, out float multiple, out float imageWidthRatio, out float imageHeightRatio)
         {
             if (imageWith >= imageHeight)
@@ -60,6 +75,9 @@ namespace ImageFinder
             }
         }
 
+        /// <summary>
+        /// HSV를 3차원 공간 좌표로 변환후 거리 리턴
+        /// </summary>
         private static float CompareHSV(float h1, float s1, float v1, float h2, float s2, float v2)
         {
             Vector3 pos1 = HSVtoVector3(h1, s1, v1);
@@ -68,6 +86,9 @@ namespace ImageFinder
             return Vector3.Distance(pos1, pos2);
         }
 
+        /// <summary>
+        /// HSV를 3차원 공간 좌표로 변환
+        /// </summary>
         private static Vector3 HSVtoVector3(float h, float s, float v)
         {
             Vector3 retval = new Vector3();
@@ -79,8 +100,12 @@ namespace ImageFinder
             return retval;
         }
 
+        /// <summary>
+        /// 두 이미지를 비교
+        /// </summary>
         private unsafe static float CompareImage(Mat srcImage, Mat dstImage)
         {
+            var asdfasdf = CompareHSV(0, 0, 0, 180, 255, 255);
             var srcData = srcImage.DataPointer;
             var dstData = dstImage.DataPointer;
 
@@ -122,14 +147,13 @@ namespace ImageFinder
 
                         float value = CompareHSV(srcH, srcS, srcV, dstH, dstS, dstV);
 
-                        if (value < 50)
+                        if (value < colorSimilarity)// 이 값이 색의 유사도 최대값임
                         {
                             count++;
                         }
                     }
                 }
             }
-
             return (count == 0 || maxCount == 0) ? 0.0f : (float)count / maxCount;// 0 으로 나누기 방지
         }
 
