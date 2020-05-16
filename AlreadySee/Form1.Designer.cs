@@ -544,7 +544,7 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.Name = "MainForm";
-            this.Text = "이미본거야";
+            this.Text = "이미본거야 - 1.1.0";
             ((System.ComponentModel.ISupportInitialize)(this.paint)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.ImageSimilarity)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.ColorSimilarity)).EndInit();
