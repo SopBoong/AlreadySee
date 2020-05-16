@@ -16,6 +16,7 @@ namespace AlreadySee
     public partial class MainForm : Form
     {
         DrawBox drawBox = null;
+        static readonly int MAXFOLDERSTACK = 20;
         static string dirPath = "";
         bool isSearching = false;
         //bool autoScrolling = true;
@@ -103,6 +104,7 @@ namespace AlreadySee
                 customPallete10.BackColor = colorList[9];
 
                 drawBox.PenWidth = RegistryManager.PenWidth;
+                searchSubFolder.Checked = RegistryManager.SearchSubFolder;
             }
             catch
             {
@@ -131,7 +133,8 @@ namespace AlreadySee
                 (float)ImageSimilarity.Value,
                 (float)ColorSimilarity.Value,
                 dirPath,
-                drawBox.PenWidth
+                drawBox.PenWidth,
+                searchSubFolder.Checked
             );
         }
 
@@ -153,6 +156,7 @@ namespace AlreadySee
         {
             dirPath = path;
             filePathBox.Text = dirPath;
+            filePathBox.Select(filePathBox.Text.Length, 0);
         }
 
         private void openFolderButton_Click(object sender, EventArgs e)
@@ -179,6 +183,7 @@ namespace AlreadySee
             isSearching = true;
             searchButton.Text = "검색 중지";
             filePathBox.Enabled = false;
+            searchSubFolder.Enabled = false;
         }
 
         private void UIend()
@@ -195,6 +200,7 @@ namespace AlreadySee
             progressBar.Minimum = 0;
             progressBar.Maximum = 0;
             filePathBox.Enabled = true;
+            searchSubFolder.Enabled = true;
         }
 
         private void ClearResult()
@@ -221,15 +227,44 @@ namespace AlreadySee
 
             ClearResult();
 
-            DirectoryInfo di = new DirectoryInfo(dirPath);
-
-            var files = di.GetFiles();
-
             while (fileQueue.TryDequeue(out var v)) { }
 
-            foreach (var file in files)
+            if (!GetFileNames(dirPath, searchSubFolder.Checked, ref fileQueue))
             {
-                var fileName = file.Name;
+                MessageBox.Show("파일 목록을 불러오는 중 오류가 발생하였습니다");
+                return;
+            }
+
+            progressBar.Minimum = 0;
+            progressBar.Maximum = fileQueue.Count;
+            progressBar.Value = 0;
+
+            UIstart();
+            ExcuteCompare();
+        }
+
+        bool GetFileNames(string dirPath, bool searchSubFolder, ref ConcurrentQueue<string> fileQueue)
+        {
+            try
+            {
+                GetFileNameProcess(new DirectoryInfo(dirPath), searchSubFolder, ref fileQueue, 0, MAXFOLDERSTACK);
+            }
+            catch
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        void GetFileNameProcess(DirectoryInfo directoryInfo, bool searchSubFolder, ref ConcurrentQueue<string> fileQueue, int nowStack, int maxStack)
+        {
+            if (nowStack >= maxStack)
+                return;
+
+            foreach (var fileinfo in directoryInfo.GetFiles())
+            {
+                var fileName = fileinfo.Name;
 
                 if (String.IsNullOrEmpty(fileName))
                     continue;
@@ -238,15 +273,17 @@ namespace AlreadySee
 
                 if (IsImageExtension(extension))
                 {
-                    fileQueue.Enqueue(fileName);
+                    fileQueue.Enqueue(fileinfo.FullName);
                 }
-
-                progressBar.Minimum = 0;
-                progressBar.Maximum = fileQueue.Count;
-                progressBar.Value = 0;
             }
-            UIstart();
-            ExcuteCompare();
+
+            if (searchSubFolder)
+            {
+                foreach (var dirInfo in directoryInfo.GetDirectories())
+                {
+                    GetFileNameProcess(dirInfo, searchSubFolder, ref fileQueue, nowStack + 1, maxStack);
+                }
+            }
         }
 
         private void SearchEnd()
@@ -301,16 +338,15 @@ namespace AlreadySee
             float minsim = (float)ImageSimilarity.Value;
             while (true)
             {
-                if (!fileQueue.TryDequeue(out var fileName) || isSearching == false)
+                if (!fileQueue.TryDequeue(out var fullName) || isSearching == false)
                     break;
 
                 progressBar.Value++;
 
-                var path = $@"{dirPath}\{fileName}";
 
                 try
                 {
-                    using (var dstBitmap = (Bitmap)Image.FromFile(path))
+                    using (var dstBitmap = (Bitmap)Image.FromFile(fullName))
                     {
                         var simul = await ImageCompareSystem.CompareWithBitmapAsync(dstBitmap);
 
@@ -318,8 +354,15 @@ namespace AlreadySee
                         {
                             var transparentBitmap = TransparentProcessing(dstBitmap);
                             dstBitmap.Dispose();
+
+                            var fileName = fullName.Split('\\').Last();
+
                             resultImageList.Images.Add(fileName, transparentBitmap);
-                            resultImageView.Items.Add(fileName, resultImageList.Images.Count - 1);
+                            var item = new ListViewItem(fileName, resultImageList.Images.Count - 1)
+                            {
+                                Name = fullName
+                            };
+                            resultImageView.Items.Add(item);
                             if (resultImageView.SelectedItems.Count == 0 && resultImageView.FocusedItem != null)
                             {
                                 resultImageView.FocusedItem.Focused = false;// focus 취소가 안되서 강제로 취소시킴
@@ -345,7 +388,7 @@ namespace AlreadySee
         {
             try
             {
-                System.Diagnostics.Process.Start($@"{dirPath}\{fileName}");
+                System.Diagnostics.Process.Start(fileName);
             }
             catch
             {
@@ -357,7 +400,7 @@ namespace AlreadySee
         {
             try
             {
-                System.Diagnostics.Process.Start("explorer.exe", string.Format("/select, \"{0}\\{1}\"", dirPath, fileName));
+                System.Diagnostics.Process.Start("explorer.exe", string.Format("/select, \"{0}\"", fileName));
             }
             catch
             {
@@ -376,7 +419,7 @@ namespace AlreadySee
 
                 if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    using (Bitmap image = new Bitmap($@"{dirPath}\{fileName}"))
+                    using (Bitmap image = new Bitmap(fileName))
                     {
                         image.Save(saveFileDialog.FileName);
                     }
@@ -393,7 +436,7 @@ namespace AlreadySee
             ListView listView = sender as ListView;
             var chosenImage = listView.FocusedItem;
             if (chosenImage != null)
-                OpenImageFile(chosenImage.Text);
+                OpenImageFile(chosenImage.Name);
         }
 
         private void resultImageView_MouseClick(object sender, MouseEventArgs e)
@@ -418,7 +461,7 @@ namespace AlreadySee
                     ListView listView = sender as ListView;
                     var chosenImage = listView.FocusedItem;
 
-                    OpenImageFile(chosenImage.Text);
+                    OpenImageFile(chosenImage.Name);
                 };
 
                 item2.Click += (s, ea) =>
@@ -426,7 +469,7 @@ namespace AlreadySee
                     ListView listView = sender as ListView;
                     var chosenImage = listView.FocusedItem;
 
-                    OpenFolderAndSelectImageFile(chosenImage.Text);
+                    OpenFolderAndSelectImageFile(chosenImage.Name);
                 };
 
                 item3.Click += (s, es) =>
@@ -434,7 +477,7 @@ namespace AlreadySee
                     ListView listView = sender as ListView;
                     var chosenImage = listView.FocusedItem;
 
-                    LoadImageAndSaveAs(chosenImage.Text);
+                    LoadImageAndSaveAs(chosenImage.Name);
                 };
 
                 menu.Show(resultImageView, new Point(e.X, e.Y));

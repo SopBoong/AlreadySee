@@ -16,6 +16,7 @@ namespace AlreadySee
         public static float ColorSimilarity = 50.0f;
         public static string FilePath = "";
         public static float PenWidth = 20.0f;
+        public static bool SearchSubFolder = false;
 
         public static void LoadRegistry()
         {
@@ -30,6 +31,7 @@ namespace AlreadySee
                 ColorSimilarity = null == subkey.GetValue(nameof(ColorSimilarity)) ? ColorSimilarity : float.Parse((string)subkey.GetValue(nameof(ColorSimilarity)));
                 FilePath = (string)subkey.GetValue(nameof(FilePath)) ?? FilePath;
                 PenWidth = null == subkey.GetValue(nameof(PenWidth)) ? PenWidth : float.Parse((string)subkey.GetValue(nameof(PenWidth)));
+                SearchSubFolder = null == subkey.GetValue(nameof(ImageSimilarity)) ? false : StringToBool((string)subkey.GetValue(nameof(SearchSubFolder)));
             }
             catch (Exception e)
             {
@@ -37,7 +39,7 @@ namespace AlreadySee
             }
         }
 
-        public static void SaveRegistry(List<Color> CustomPalleteColorList, Color NowColor, float ImageSimilarity, float ColorSimilarity, string FilePath, float PenWidth)
+        public static void SaveRegistry(List<Color> CustomPalleteColorList, Color NowColor, float ImageSimilarity, float ColorSimilarity, string FilePath, float PenWidth, bool SearchSubFolder)
         {
             try
             {
@@ -50,6 +52,7 @@ namespace AlreadySee
                 subkey.SetValue(nameof(ColorSimilarity), ColorSimilarity.ToString());
                 subkey.SetValue(nameof(FilePath), FilePath);
                 subkey.SetValue(nameof(PenWidth), PenWidth.ToString());
+                subkey.SetValue(nameof(SearchSubFolder), BoolToString(SearchSubFolder));
             }
             catch
             {
@@ -73,6 +76,7 @@ namespace AlreadySee
             return $"{color.R},{color.G},{color.B}";
         }
 
+
         private static Color StringToColor(string color, Color defaultColor)
         {
             try
@@ -84,6 +88,16 @@ namespace AlreadySee
             {
                 return defaultColor;
             }
+        }
+
+        private static string BoolToString(bool value)
+        {
+            return value ? "TRUE" : "FALSE";
+        }
+
+        private static bool StringToBool(string value)
+        {
+            return value == "TRUE";
         }
     }
 }

@@ -78,6 +78,7 @@
             this.customPallete10 = new System.Windows.Forms.Panel();
             this.colorDialog = new System.Windows.Forms.ColorDialog();
             this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
+            this.searchSubFolder = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.paint)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.ImageSimilarity)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.ColorSimilarity)).BeginInit();
@@ -92,6 +93,7 @@
             // resultImageView
             // 
             this.resultImageView.BackColor = System.Drawing.SystemColors.ScrollBar;
+            this.resultImageView.HideSelection = false;
             this.resultImageView.LargeImageList = this.resultImageList;
             this.resultImageView.Location = new System.Drawing.Point(6, 6);
             this.resultImageView.MultiSelect = false;
@@ -369,7 +371,7 @@
             0,
             0,
             0});
-            this.ColorSimilarity.Location = new System.Drawing.Point(803, 64);
+            this.ColorSimilarity.Location = new System.Drawing.Point(808, 64);
             this.ColorSimilarity.Maximum = new decimal(new int[] {
             360,
             0,
@@ -382,7 +384,7 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(865, 69);
+            this.label2.Location = new System.Drawing.Point(871, 69);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(97, 12);
             this.label2.TabIndex = 20;
@@ -391,9 +393,10 @@
             // filePathBox
             // 
             this.filePathBox.Location = new System.Drawing.Point(705, 36);
+            this.filePathBox.MaxLength = 0;
             this.filePathBox.Name = "filePathBox";
             this.filePathBox.ReadOnly = true;
-            this.filePathBox.Size = new System.Drawing.Size(256, 21);
+            this.filePathBox.Size = new System.Drawing.Size(158, 21);
             this.filePathBox.TabIndex = 21;
             // 
             // customPallete1
@@ -476,6 +479,16 @@
             this.customPallete10.Size = new System.Drawing.Size(23, 23);
             this.customPallete10.TabIndex = 23;
             // 
+            // searchSubFolder
+            // 
+            this.searchSubFolder.AutoSize = true;
+            this.searchSubFolder.Location = new System.Drawing.Point(870, 40);
+            this.searchSubFolder.Name = "searchSubFolder";
+            this.searchSubFolder.Size = new System.Drawing.Size(100, 16);
+            this.searchSubFolder.TabIndex = 24;
+            this.searchSubFolder.Text = "하위폴더 검색";
+            this.searchSubFolder.UseVisualStyleBackColor = true;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 12F);
@@ -483,6 +496,7 @@
             this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
             this.ClientSize = new System.Drawing.Size(976, 605);
+            this.Controls.Add(this.searchSubFolder);
             this.Controls.Add(this.customPallete10);
             this.Controls.Add(this.customPallete9);
             this.Controls.Add(this.customPallete8);
@@ -588,6 +602,7 @@
         private System.Windows.Forms.Panel customPallete10;
         private System.Windows.Forms.ColorDialog colorDialog;
         private System.Windows.Forms.SaveFileDialog saveFileDialog;
+        private System.Windows.Forms.CheckBox searchSubFolder;
     }
 }
 
